@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "django_filters",
     "pixhub",
     "utils",
+    "blog",
 ]
 
 MIDDLEWARE = [
