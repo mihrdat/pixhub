@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "pixhub",
     "utils",
     "blog",
+    "users",
 ]
 
 MIDDLEWARE = [
