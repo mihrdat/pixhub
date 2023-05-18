@@ -94,6 +94,9 @@ AUTH_USER_MODEL = "users.User"
 
 REST_FRAMEWORK = {
     "COERCE_DECIMAL_TO_STRING": False,
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
 }
 
 REDIS_URL = os.getenv("REDIS_URL", default="redis://redis:6379/1")
