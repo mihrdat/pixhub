@@ -16,9 +16,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "django_filters",
-    "utils",
-    "blog",
     "users",
+    "blog",
 ]
 
 MIDDLEWARE = [
@@ -77,7 +76,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
     {
-        "NAME": "utils.auth.password_validation.SpecialCharPasswordValidator",
+        "NAME": "utils.password_validation.SpecialCharPasswordValidator",
     },
 ]
 
