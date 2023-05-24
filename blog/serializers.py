@@ -26,6 +26,22 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         model = Subscription
         fields = ["id", "subscriber", "author"]
 
+    def validate(self, attrs):
+        subscriber = self.context["request"].user.author
+        author = attrs["author"]
+
+        if subscriber == author:
+            raise serializers.ValidationError(
+                {"error": "You cannot subscribe to yourself."}
+            )
+
+        if Subscription.objects.filter(subscriber=subscriber, author=author).exists():
+            raise serializers.ValidationError(
+                {"error": "You have already subscribed to this author."}
+            )
+
+        return super().validate(attrs)
+
     def create(self, validated_data):
         validated_data["subscriber"] = self.context["request"].user.author
         return super().create(validated_data)
