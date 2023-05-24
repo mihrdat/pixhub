@@ -1,9 +1,15 @@
-from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.mixins import (
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    CreateModelMixin,
+    DestroyModelMixin,
+)
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from .models import Author
-from .serializers import AuthorSerializer
+from .models import Author, Subscription
+from .serializers import AuthorSerializer, SubscriptionSerializer
 
 
 class AuthorViewSet(
@@ -31,3 +37,10 @@ class AuthorViewSet(
 
     def get_instance(self):
         return Author.objects.get(user=self.request.user)
+
+
+class SubscriptionViewSet(
+    CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet
+):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
