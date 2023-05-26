@@ -8,6 +8,7 @@ from rest_framework.mixins import (
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Subscription
 from .serializers import AuthorSerializer, SubscriptionSerializer
 from .permissions import IsSubscriberOrReadOnly
@@ -50,3 +51,5 @@ class SubscriptionViewSet(
     queryset = Subscription.objects.select_related("subscriber__user").all()
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated, IsSubscriberOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["subscriber", "author"]
