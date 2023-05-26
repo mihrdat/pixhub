@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from .models import Author, Subscription
 from .serializers import AuthorSerializer, SubscriptionSerializer
+from .permissions import IsSubscriberOrReadOnly
 
 
 class AuthorViewSet(
@@ -40,7 +41,12 @@ class AuthorViewSet(
 
 
 class SubscriptionViewSet(
-    CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    RetrieveModelMixin,
+    GenericViewSet,
 ):
-    queryset = Subscription.objects.all()
+    queryset = Subscription.objects.select_related("subscriber__user").all()
     serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated, IsSubscriberOrReadOnly]
