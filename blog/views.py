@@ -12,14 +12,16 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Subscription
 from .serializers import AuthorSerializer, SubscriptionSerializer
 from .permissions import IsSubscriberOrReadOnly
+from .pagination import DefaultLimitOffsetPagination
 
 
 class AuthorViewSet(
     ListModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet
 ):
-    queryset = Author.objects.all()
+    queryset = Author.objects.select_related("user").all()
     serializer_class = AuthorSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
 
     def get_queryset(self):
         user = self.request.user
@@ -53,3 +55,4 @@ class SubscriptionViewSet(
     permission_classes = [IsAuthenticated, IsSubscriberOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["subscriber", "author"]
+    pagination_class = DefaultLimitOffsetPagination
