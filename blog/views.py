@@ -14,7 +14,6 @@ from .serializers import (
     AuthorSerializer,
     SubscriptionSerializer,
     ArticleSerializer,
-    ArticleCreateUpdateSerializer,
 )
 from .permissions import IsSubscriberOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
@@ -67,8 +66,3 @@ class ArticleViewSet(ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     pagination_class = DefaultLimitOffsetPagination
-
-    def get_serializer_class(self):
-        if self.action in ["create", "update", "partial_update"]:
-            self.serializer_class = ArticleCreateUpdateSerializer
-        return super().get_serializer_class()

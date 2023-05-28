@@ -1,4 +1,3 @@
-from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -22,11 +21,10 @@ class AuthorSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    subscriber = serializers.PrimaryKeyRelatedField(read_only=True)
-
     class Meta:
         model = Subscription
         fields = ["id", "subscriber", "author"]
+        read_only_fields = ["subscriber"]
 
     def validate(self, attrs):
         subscriber = self.context["request"].user.author
@@ -54,25 +52,13 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = [
-            "id",
-            "title",
-            "content",
-            "slug",
-            "created_at",
-            "author",
-        ]
-
-    def get_slug(self, article):
-        return slugify(f"{article.title}-{article.created_at}")
-
-
-class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Article
-        fields = ["title", "content"]
+        fields = ["id", "title", "content", "slug", "created_at", "author"]
+        read_only_fields = ["author"]
 
     def create(self, validated_data):
         request = self.context["request"]
         validated_data["author"] = request.user.author
         return super().create(validated_data)
+
+    def get_slug(self, article):
+        return slugify(f"{article.title}-{article.created_at}")
