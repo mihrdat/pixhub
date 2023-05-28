@@ -25,9 +25,7 @@ class Subscription(models.Model):
 
 
 class Article(models.Model):
-    slug = models.SlugField(primary_key=True, max_length=255)
     title = models.CharField(max_length=255)
     content = models.TextField(max_length=255, blank=True, null=True)
-    created_at = models.DateField(auto_now_add=True)
-    updated_at = models.DateField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name="blogs")

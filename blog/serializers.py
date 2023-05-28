@@ -1,6 +1,8 @@
+from django.urls import reverse
+from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Author, Subscription
+from .models import Author, Subscription, Article
 
 User = get_user_model()
 
@@ -32,16 +34,52 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
         if subscriber == author:
             raise serializers.ValidationError(
-                {"error": "You cannot subscribe to yourself."}
+                {"author": "You cannot subscribe to yourself."}
             )
 
         if Subscription.objects.filter(subscriber=subscriber, author=author).exists():
             raise serializers.ValidationError(
-                {"error": "You have already subscribed to this author."}
+                {"author": "You have already subscribed to this author."}
             )
 
         return super().validate(attrs)
 
     def create(self, validated_data):
         validated_data["subscriber"] = self.context["request"].user.author
+        return super().create(validated_data)
+
+
+class ArticleSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Article
+        fields = [
+            "id",
+            "title",
+            "content",
+            "slug",
+            "created_at",
+            "author",
+            "url",
+        ]
+
+    def get_url(self, article):
+        request = self.context["request"]
+        url = reverse("article-detail", kwargs={"pk": article.pk})
+        return request.build_absolute_uri(url)
+
+    def get_slug(self, article):
+        return slugify(f"{article.title}-{article.created_at}")
+
+
+class ArticleCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Article
+        fields = ["title", "content"]
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        validated_data["author"] = request.user.author
         return super().create(validated_data)
