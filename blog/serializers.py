@@ -50,7 +50,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class ArticleSerializer(serializers.ModelSerializer):
-    url = serializers.SerializerMethodField()
     slug = serializers.SerializerMethodField()
 
     class Meta:
@@ -62,13 +61,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             "slug",
             "created_at",
             "author",
-            "url",
         ]
-
-    def get_url(self, article):
-        request = self.context["request"]
-        url = reverse("article-detail", kwargs={"pk": article.pk})
-        return request.build_absolute_uri(url)
 
     def get_slug(self, article):
         return slugify(f"{article.title}-{article.created_at}")
