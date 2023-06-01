@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
@@ -60,6 +61,20 @@ class SubscriptionViewSet(
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["subscriber", "author"]
     pagination_class = DefaultLimitOffsetPagination
+
+    @transaction.atomic()
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        subscriber = instance.subscriber
+        subscriber.subscriptions_count -= 1
+        subscriber.save(update_fields=["subscriptions_count"])
+
+        author = instance.author
+        author.subscribers_count -= 1
+        author.save(update_fields=["subscribers_count"])
+
+        return super().destroy(request, *args, **kwargs)
 
 
 class ArticleViewSet(ModelViewSet):

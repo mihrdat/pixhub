@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -18,6 +19,7 @@ class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Author
         fields = ["id", "bio", "user", "subscribers_count", "subscriptions_count"]
+        read_only_fields = ["subscribers_count", "subscriptions_count"]
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -42,9 +44,20 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
         return super().validate(attrs)
 
+    @transaction.atomic()
     def create(self, validated_data):
         validated_data["subscriber"] = self.context["request"].user.author
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+
+        subscriber = instance.subscriber
+        subscriber.subscriptions_count += 1
+        subscriber.save(update_fields=["subscriptions_count"])
+
+        author = instance.author
+        author.subscribers_count += 1
+        author.save(update_fields=["subscribers_count"])
+
+        return instance
 
 
 class ArticleSerializer(serializers.ModelSerializer):
