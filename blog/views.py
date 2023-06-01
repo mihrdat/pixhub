@@ -9,6 +9,7 @@ from rest_framework.mixins import (
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Subscription, Article
 from .serializers import (
@@ -27,6 +28,8 @@ class AuthorViewSet(
     serializer_class = AuthorSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = DefaultLimitOffsetPagination
+    filter_backends = [SearchFilter]
+    search_fields = ["user__email"]
 
     def get_queryset(self):
         user = self.request.user
