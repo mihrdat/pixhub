@@ -62,7 +62,7 @@ class SubscriptionViewSet(
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated, IsSubscriberOrReadOnly]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["subscriber", "author"]
+    filterset_fields = ["subscriber", "target"]
     pagination_class = DefaultLimitOffsetPagination
 
     @transaction.atomic()
@@ -73,9 +73,9 @@ class SubscriptionViewSet(
         subscriber.subscriptions_count -= 1
         subscriber.save(update_fields=["subscriptions_count"])
 
-        author = instance.author
-        author.subscribers_count -= 1
-        author.save(update_fields=["subscribers_count"])
+        target = instance.target
+        target.subscribers_count -= 1
+        target.save(update_fields=["subscribers_count"])
 
         return super().destroy(request, *args, **kwargs)
 

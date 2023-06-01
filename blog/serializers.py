@@ -25,21 +25,21 @@ class AuthorSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
-        fields = ["id", "subscriber", "author"]
+        fields = ["id", "subscriber", "target"]
         read_only_fields = ["subscriber"]
 
     def validate(self, attrs):
         subscriber = self.context["request"].user.author
-        author = attrs["author"]
+        target = attrs["target"]
 
-        if subscriber == author:
+        if subscriber == target:
             raise serializers.ValidationError(
-                {"author": "You cannot subscribe to yourself."}
+                {"target": "You cannot subscribe to yourself."}
             )
 
-        if Subscription.objects.filter(subscriber=subscriber, author=author).exists():
+        if Subscription.objects.filter(subscriber=subscriber, target=target).exists():
             raise serializers.ValidationError(
-                {"author": "You have already subscribed to this author."}
+                {"target": "You have already subscribed to this author."}
             )
 
         return super().validate(attrs)
@@ -53,9 +53,9 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         subscriber.subscriptions_count += 1
         subscriber.save(update_fields=["subscriptions_count"])
 
-        author = instance.author
-        author.subscribers_count += 1
-        author.save(update_fields=["subscribers_count"])
+        target = instance.target
+        target.subscribers_count += 1
+        target.save(update_fields=["subscribers_count"])
 
         return instance
 
