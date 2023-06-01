@@ -120,30 +120,6 @@ CACHES = {
 
 CELERY_BROKER_URL = REDIS_URL
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": "general.log",
-            "formatter": "verbose",
-        },
-    },
-    "loggers": {
-        "": {
-            "handlers": ["file"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", default="INFO"),
-        }
-    },
-    "formatters": {
-        "verbose": {
-            "format": "{asctime} ({levelname}) - {name} - {message}",
-            "style": "{",
-        }
-    },
-}
-
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
