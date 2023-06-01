@@ -31,12 +31,6 @@ class AuthorViewSet(
     filter_backends = [SearchFilter]
     search_fields = ["user__email"]
 
-    def get_queryset(self):
-        user = self.request.user
-        if not user.is_staff:
-            self.queryset = self.queryset.filter(user=user)
-        return super().get_queryset()
-
     @action(methods=["GET", "PUT", "PATCH"], detail=False)
     def me(self, request, *args, **kwargs):
         self.get_object = self.get_instance
