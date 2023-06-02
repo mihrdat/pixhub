@@ -55,9 +55,9 @@ class SubscriptionViewSet(
     queryset = Subscription.objects.select_related("subscriber__user").all()
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated, IsSubscriberOrReadOnly]
+    pagination_class = DefaultLimitOffsetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["subscriber", "target"]
-    pagination_class = DefaultLimitOffsetPagination
 
     @transaction.atomic()
     def destroy(self, request, *args, **kwargs):
@@ -77,4 +77,10 @@ class SubscriptionViewSet(
 class ArticleViewSet(ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
+    permission_classes = [IsAuthenticated]
     pagination_class = DefaultLimitOffsetPagination
+
+    def get_queryset(self):
+        author = self.request.user.author
+        subscriptions = author.subscriptions.values_list("target_id", flat=True)
+        return super().get_queryset().filter(author__in=subscriptions)
