@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import action
 from .serializers import UserSerializer, UserCreateSerializer
 
 User = get_user_model()
@@ -10,6 +11,20 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+
+    @action(methods=["GET", "PUT", "PATCH"], detail=False)
+    def me(self, request, *args, **kwargs):
+        if request.method == "GET":
+            return self.retrieve(request, *args, **kwargs)
+        elif request.method == "PUT":
+            return self.update(request, *args, **kwargs)
+        elif request.method == "PATCH":
+            return self.partial_update(request, *args, **kwargs)
+
+    def get_object(self):
+        if self.action == "me":
+            return self.request.user
+        return super().get_object()
 
     def get_queryset(self):
         user = self.request.user
