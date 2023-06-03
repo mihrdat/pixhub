@@ -53,7 +53,7 @@ class SubscriptionViewSet(
     RetrieveModelMixin,
     GenericViewSet,
 ):
-    queryset = Subscription.objects.select_related("subscriber__user").all()
+    queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated, IsSubscriberOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
