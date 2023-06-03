@@ -33,7 +33,6 @@ class AuthorViewSet(
 
     @action(methods=["GET", "PUT", "PATCH"], detail=False)
     def me(self, request, *args, **kwargs):
-        self.get_object = self.get_instance
         if request.method == "GET":
             return self.retrieve(request, *args, **kwargs)
         elif request.method == "PUT":
@@ -41,8 +40,10 @@ class AuthorViewSet(
         elif request.method == "PATCH":
             return self.partial_update(request, *args, **kwargs)
 
-    def get_instance(self):
-        return Author.objects.get(user=self.request.user)
+    def get_object(self):
+        if self.action == "me":
+            return Author.objects.get(user=self.request.user)
+        return super().get_object()
 
 
 class SubscriptionViewSet(
