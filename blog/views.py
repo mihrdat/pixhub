@@ -82,6 +82,4 @@ class ArticleViewSet(ModelViewSet):
     pagination_class = DefaultLimitOffsetPagination
 
     def get_queryset(self):
-        author = self.request.user.author
-        subscriptions = author.subscriptions.values_list("target_id", flat=True)
-        return super().get_queryset().filter(author__in=subscriptions)
+        return super().get_queryset().filter(author=self.kwargs["author_pk"])
