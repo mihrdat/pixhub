@@ -22,6 +22,14 @@ class AuthorSerializer(serializers.ModelSerializer):
         read_only_fields = ["subscribers_count", "subscriptions_count"]
 
 
+class SimpleAuthorSerializer(serializers.ModelSerializer):
+    user = SimpleUserSerializer(read_only=True)
+
+    class Meta:
+        model = Author
+        fields = ["id", "bio", "user"]
+
+
 class SubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
