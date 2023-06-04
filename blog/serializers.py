@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.urls import reverse
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -66,6 +67,22 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         target.save(update_fields=["subscribers_count"])
 
         return instance
+
+
+class SimpleArticleSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Article
+        fields = ["id", "title", "created_at", "url"]
+
+    def get_url(self, article):
+        request = self.context["request"]
+        author_id = self.context["author_id"]
+        url = reverse(
+            "author-articles-detail", kwargs={"author_pk": author_id, "pk": article.pk}
+        )
+        return request.build_absolute_uri(url)
 
 
 class ArticleSerializer(serializers.ModelSerializer):
