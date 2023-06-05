@@ -6,7 +6,7 @@ from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
 )
-from rest_framework.viewsets import GenericViewSet, ModelViewSet
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -14,7 +14,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Subscription, Article
 from .serializers import (
     AuthorSerializer,
-    SimpleAuthorSerializer,
     SubscriptionSerializer,
     ArticleSerializer,
 )
@@ -45,12 +44,6 @@ class AuthorViewSet(
         if self.action == "me":
             return Author.objects.get(user=self.request.user)
         return super().get_object()
-
-    def get_serializer_class(self):
-        if self.action == "list":
-            self.serializer_class = SimpleAuthorSerializer
-        return super().get_serializer_class()
-
 
 class SubscriptionViewSet(
     CreateModelMixin,

@@ -1,6 +1,4 @@
 from django.db import transaction
-from django.urls import reverse
-from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Author, Subscription, Article
@@ -21,14 +19,6 @@ class AuthorSerializer(serializers.ModelSerializer):
         model = Author
         fields = ["id", "bio", "subscribers_count", "subscriptions_count", "user"]
         read_only_fields = ["subscribers_count", "subscriptions_count"]
-
-
-class SimpleAuthorSerializer(serializers.ModelSerializer):
-    user = SimpleUserSerializer(read_only=True)
-
-    class Meta:
-        model = Author
-        fields = ["id", "bio", "user"]
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
