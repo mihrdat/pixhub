@@ -89,8 +89,3 @@ class ArticleViewSet(
 
     def get_queryset(self):
         return super().get_queryset().filter(author=self.kwargs["author_pk"])
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["author_id"] = self.kwargs["author_pk"]
-        return context
