@@ -19,7 +19,7 @@ from .serializers import (
     ArticleSerializer,
     SimpleArticleSerializer,
 )
-from .permissions import IsSubscriberOrReadOnly
+from .permissions import IsSubscriberOrReadOnly, IsOwnerOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
 
 
@@ -91,7 +91,7 @@ class ArticleViewSet(
 ):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
 
     def get_queryset(self):
