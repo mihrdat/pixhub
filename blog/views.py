@@ -82,7 +82,13 @@ class SubscriptionViewSet(
         return super().destroy(request, *args, **kwargs)
 
 
-class ArticleViewSet(ModelViewSet):
+class ArticleViewSet(
+    ListModelMixin,
+    RetrieveModelMixin,
+    DestroyModelMixin,
+    UpdateModelMixin,
+    GenericViewSet,
+):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     permission_classes = [IsAuthenticated]
