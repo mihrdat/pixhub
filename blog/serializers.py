@@ -69,22 +69,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return instance
 
 
-class SimpleArticleSerializer(serializers.ModelSerializer):
-    url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Article
-        fields = ["id", "title", "created_at", "url"]
-
-    def get_url(self, article):
-        request = self.context["request"]
-        author_id = self.context["author_id"]
-        url = reverse(
-            "author-articles-detail", kwargs={"author_pk": author_id, "pk": article.pk}
-        )
-        return request.build_absolute_uri(url)
-
-
 class ArticleSerializer(serializers.ModelSerializer):
     slug = serializers.SerializerMethodField()
 

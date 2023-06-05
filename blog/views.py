@@ -17,7 +17,6 @@ from .serializers import (
     SimpleAuthorSerializer,
     SubscriptionSerializer,
     ArticleSerializer,
-    SimpleArticleSerializer,
 )
 from .permissions import IsSubscriberOrReadOnly, IsOwnerOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
@@ -96,11 +95,6 @@ class ArticleViewSet(
 
     def get_queryset(self):
         return super().get_queryset().filter(author=self.kwargs["author_pk"])
-
-    def get_serializer_class(self):
-        if self.action == "list":
-            self.serializer_class = SimpleArticleSerializer
-        return super().get_serializer_class()
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
