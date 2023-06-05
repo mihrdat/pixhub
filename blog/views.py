@@ -11,10 +11,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Author, Subscription, Article
+from .models import Author, Relation, Article
 from .serializers import (
     AuthorSerializer,
-    SubscriptionSerializer,
+    RelationSerializer,
     ArticleSerializer,
 )
 from .permissions import IsSubscriberOrReadOnly, IsOwnerOrReadOnly
@@ -45,15 +45,16 @@ class AuthorViewSet(
             return Author.objects.get(user=self.request.user)
         return super().get_object()
 
-class SubscriptionViewSet(
+
+class RelationViewSet(
     CreateModelMixin,
     DestroyModelMixin,
     ListModelMixin,
     RetrieveModelMixin,
     GenericViewSet,
 ):
-    queryset = Subscription.objects.all()
-    serializer_class = SubscriptionSerializer
+    queryset = Relation.objects.all()
+    serializer_class = RelationSerializer
     permission_classes = [IsAuthenticated, IsSubscriberOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
     filter_backends = [DjangoFilterBackend]

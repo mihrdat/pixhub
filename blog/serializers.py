@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Author, Subscription, Article
+from .models import Author, Relation, Article
 
 User = get_user_model()
 
@@ -21,9 +21,9 @@ class AuthorSerializer(serializers.ModelSerializer):
         read_only_fields = ["subscribers_count", "subscriptions_count"]
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
+class RelationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Subscription
+        model = Relation
         fields = ["id", "subscriber", "target"]
         read_only_fields = ["subscriber"]
 
@@ -36,7 +36,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
                 {"target": "You cannot subscribe to yourself."}
             )
 
-        if Subscription.objects.filter(subscriber=subscriber, target=target).exists():
+        if Relation.objects.filter(subscriber=subscriber, target=target).exists():
             raise serializers.ValidationError(
                 {"target": "You have already subscribed to this author."}
             )

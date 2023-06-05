@@ -11,7 +11,7 @@ class Author(models.Model):
     subscriptions_count = models.IntegerField(default=0)
 
 
-class Subscription(models.Model):
+class Relation(models.Model):
     subscriber = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscriptions"
     )
