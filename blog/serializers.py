@@ -70,17 +70,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class ArticleSerializer(serializers.ModelSerializer):
-    slug = serializers.SerializerMethodField()
-
     class Meta:
         model = Article
-        fields = ["id", "title", "content", "slug", "created_at", "author"]
+        fields = ["id", "title", "content", "created_at", "author"]
         read_only_fields = ["author"]
 
     def create(self, validated_data):
         request = self.context["request"]
         validated_data["author"] = request.user.author
         return super().create(validated_data)
-
-    def get_slug(self, article):
-        return slugify(f"{article.title}-{article.created_at}")
