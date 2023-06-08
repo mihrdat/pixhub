@@ -2,21 +2,18 @@ from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
     UpdateModelMixin,
-    CreateModelMixin,
     DestroyModelMixin,
 )
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from django_filters.rest_framework import DjangoFilterBackend
-from .models import Author, Relation, Article
+from .models import Author, Article
 from .serializers import (
     AuthorSerializer,
-    RelationSerializer,
     ArticleSerializer,
 )
-from .permissions import IsSubscriberOrReadOnly, IsOwnerOrReadOnly
+from .permissions import IsOwnerOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
 
 
@@ -43,21 +40,6 @@ class AuthorViewSet(
         if self.action == "me":
             return Author.objects.get(user=self.request.user)
         return super().get_object()
-
-
-class RelationViewSet(
-    CreateModelMixin,
-    DestroyModelMixin,
-    ListModelMixin,
-    RetrieveModelMixin,
-    GenericViewSet,
-):
-    queryset = Relation.objects.all()
-    serializer_class = RelationSerializer
-    permission_classes = [IsAuthenticated, IsSubscriberOrReadOnly]
-    pagination_class = DefaultLimitOffsetPagination
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["subscriber", "target"]
 
 
 class ArticleViewSet(
