@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Author, Relation, Article
@@ -42,21 +41,6 @@ class RelationSerializer(serializers.ModelSerializer):
             )
 
         return super().validate(attrs)
-
-    @transaction.atomic()
-    def create(self, validated_data):
-        validated_data["subscriber"] = self.context["request"].user.author
-        instance = super().create(validated_data)
-
-        subscriber = instance.subscriber
-        subscriber.subscriptions_count += 1
-        subscriber.save(update_fields=["subscriptions_count"])
-
-        target = instance.target
-        target.subscribers_count += 1
-        target.save(update_fields=["subscribers_count"])
-
-        return instance
 
 
 class ArticleSerializer(serializers.ModelSerializer):
