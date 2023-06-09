@@ -1,3 +1,4 @@
+from django.db.models.aggregates import Count
 from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
@@ -20,9 +21,13 @@ from .pagination import DefaultLimitOffsetPagination
 class AuthorViewSet(
     ListModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet
 ):
-    queryset = Author.objects.select_related("user").all()
+    queryset = (
+        Author.objects.select_related("user")
+        .annotate(subscribers_count=Count("subscribers"))
+        .annotate(subscriptions_count=Count("subscriptions"))
+    )
     serializer_class = AuthorSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
     filter_backends = [SearchFilter]
     search_fields = ["user__email"]
