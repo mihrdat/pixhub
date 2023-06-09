@@ -3,6 +3,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
 from .serializers import UserSerializer, UserCreateSerializer
+from .pagination import DefaultLimitOffsetPagination
 
 User = get_user_model()
 
@@ -11,6 +12,7 @@ class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
 
     @action(methods=["GET", "PUT", "PATCH"], detail=False)
     def me(self, request, *args, **kwargs):
