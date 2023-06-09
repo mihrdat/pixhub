@@ -43,7 +43,7 @@ class AuthorViewSet(
 
     def get_object(self):
         if self.action == "me":
-            return Author.objects.get(user=self.request.user)
+            return super().get_queryset().get(user=self.request.user)
         return super().get_object()
 
 
