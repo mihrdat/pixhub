@@ -60,4 +60,7 @@ class ArticleViewSet(
     pagination_class = DefaultLimitOffsetPagination
 
     def get_queryset(self):
-        return super().get_queryset().filter(author=self.kwargs["author_pk"])
+        author_pk = self.kwargs["author_pk"]
+        if author_pk == "me":
+            author_pk = self.request.user.author.pk
+        return super().get_queryset().filter(author_id=author_pk)
