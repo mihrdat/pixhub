@@ -3,12 +3,14 @@ from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
     UpdateModelMixin,
+    CreateModelMixin,
     DestroyModelMixin,
 )
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Article
 from .serializers import (
     AuthorSerializer,
@@ -48,19 +50,16 @@ class AuthorViewSet(
 
 
 class ArticleViewSet(
+    CreateModelMixin,
     ListModelMixin,
     RetrieveModelMixin,
-    DestroyModelMixin,
     UpdateModelMixin,
+    DestroyModelMixin,
     GenericViewSet,
 ):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
-
-    def get_queryset(self):
-        author_pk = self.kwargs["author_pk"]
-        if author_pk == "me":
-            author_pk = self.request.user.author.pk
-        return super().get_queryset().filter(author_id=author_pk)
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["author"]
