@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.db.models.aggregates import Count
 from rest_framework.mixins import (
     ListModelMixin,
@@ -62,3 +63,13 @@ class ArticleViewSet(
     pagination_class = DefaultLimitOffsetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["author"]
+
+    def get_queryset(self):
+        current_author = self.request.user.author
+        subscriptions = current_author.subscriptions.values_list("target", flat=True)
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(author_id__in=subscriptions) | Q(author_id=current_author.pk))
+            .order_by("-created_at")
+        )
