@@ -9,7 +9,7 @@ from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
 )
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -115,3 +115,31 @@ class ArticleViewSet(
             .filter(Q(author_id__in=subscriptions) | Q(author_id=current_author.pk))
             .order_by("-created_at")
         )
+
+
+class SubscriberViewSet(ReadOnlyModelViewSet):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
+    filter_backends = [SearchFilter]
+    search_fields = ["user__email"]
+
+    def get_queryset(self):
+        author = Author.objects.get(pk=self.kwargs["author_pk"])
+        subscribers = author.subscribers.values_list("subscriber", flat=True)
+        return super().get_queryset().filter(pk__in=subscribers)
+
+
+class SubscriptionViewSet(ReadOnlyModelViewSet):
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
+    filter_backends = [SearchFilter]
+    search_fields = ["user__email"]
+
+    def get_queryset(self):
+        author = Author.objects.get(pk=self.kwargs["author_pk"])
+        subscriptions = author.subscriptions.values_list("target", flat=True)
+        return super().get_queryset().filter(pk__in=subscriptions)
