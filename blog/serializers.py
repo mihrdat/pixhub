@@ -12,13 +12,12 @@ class SimpleUserSerializer(serializers.ModelSerializer):
 
 
 class AuthorSerializer(serializers.ModelSerializer):
-    subscribers_count = serializers.IntegerField(read_only=True)
-    subscriptions_count = serializers.IntegerField(read_only=True)
     user = SimpleUserSerializer(read_only=True)
 
     class Meta:
         model = Author
         fields = ["id", "bio", "subscribers_count", "subscriptions_count", "user"]
+        read_only_fields = ["subscribers_count", "subscriptions_count"]
 
 
 class ArticleSerializer(serializers.ModelSerializer):

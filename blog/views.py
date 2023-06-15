@@ -1,5 +1,5 @@
+from django.db import transaction
 from django.db.models import Q
-from django.db.models.aggregates import Count
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.mixins import (
@@ -42,20 +42,39 @@ class AuthorViewSet(
         elif request.method == "PATCH":
             return self.partial_update(request, *args, **kwargs)
 
+    @transaction.atomic()
     @action(methods=["POST"], detail=True)
     def subscribe(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+        subscriber = self.request.user.author
+        target = Author.objects.get(pk=self.kwargs["pk"])
+
+        subscriber.subscriptions_count += 1
+        subscriber.save(update_fields=["subscriptions_count"])
+        target.subscribers_count += 1
+        target.save(update_fields=["subscribers_count"])
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @transaction.atomic()
     @action(methods=["DELETE"], detail=True)
     def unsubscribe(self, request, *args, **kwargs):
         try:
-            Relation.objects.get(
-                subscriber=self.request.user.author, target=self.kwargs["pk"]
-            ).delete()
+            subscriber = self.request.user.author
+            target = Author.objects.get(pk=self.kwargs["pk"])
+
+            Relation.objects.get(subscriber=subscriber, target=target).delete()
+
+            subscriber.subscriptions_count -= 1
+            subscriber.save(update_fields=["subscriptions_count"])
+            target.subscribers_count -= 1
+            target.save(update_fields=["subscribers_count"])
+
             return Response(status=status.HTTP_204_NO_CONTENT)
+
         except Relation.DoesNotExist:
             return Response(
                 {
