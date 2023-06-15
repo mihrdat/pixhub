@@ -25,10 +25,7 @@ from .pagination import DefaultLimitOffsetPagination
 class AuthorViewSet(
     ListModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet
 ):
-    queryset = Author.objects.select_related("user").annotate(
-        subscribers_count=Count("subscribers", distinct=True),
-        subscriptions_count=Count("subscriptions", distinct=True),
-    )
+    queryset = Author.objects.select_related("user")
     serializer_class = AuthorSerializer
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
