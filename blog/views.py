@@ -42,64 +42,6 @@ class AuthorViewSet(
         elif request.method == "PATCH":
             return self.partial_update(request, *args, **kwargs)
 
-    @transaction.atomic()
-    @action(methods=["POST"], detail=True)
-    def subscribe(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        subscriber = self.request.user.author
-        target = Author.objects.get(pk=self.kwargs["pk"])
-
-        subscriber.subscriptions_count += 1
-        subscriber.save(update_fields=["subscriptions_count"])
-        target.subscribers_count += 1
-        target.save(update_fields=["subscribers_count"])
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @transaction.atomic()
-    @action(methods=["DELETE"], detail=True)
-    def unsubscribe(self, request, *args, **kwargs):
-        try:
-            subscriber = self.request.user.author
-            target = Author.objects.get(pk=self.kwargs["pk"])
-
-            Relation.objects.get(subscriber=subscriber, target=target).delete()
-
-            subscriber.subscriptions_count -= 1
-            subscriber.save(update_fields=["subscriptions_count"])
-            target.subscribers_count -= 1
-            target.save(update_fields=["subscribers_count"])
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        except Relation.DoesNotExist:
-            return Response(
-                {
-                    "detail": "Invalid unsubscription request! No existing subscription for the specified author."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-    def get_serializer_class(self):
-        if self.action in ["subscribe", "unsubscribe"]:
-            self.serializer_class = RelationSerializer
-        return super().get_serializer_class()
-
-    def get_serializer_context(self):
-        if self.action in ["subscribe", "unsubscribe"]:
-            context = super().get_serializer_context()
-            context["target"] = Author.objects.get(pk=self.kwargs["pk"])
-            return context
-        return super().get_serializer_context()
-
-    def get_permissions(self):
-        if self.action in ["subscribe", "unsubscribe"]:
-            self.permission_classes = [IsAuthenticated]
-        return super().get_permissions()
-
     def get_current_author(self):
         return super().get_queryset().get(user=self.request.user)
 
