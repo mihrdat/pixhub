@@ -1,22 +1,15 @@
-from django.db import transaction
-from django.db.models import Q
-from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
     UpdateModelMixin,
 )
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet, ModelViewSet
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from django_filters.rest_framework import DjangoFilterBackend
-from .models import Author, Article, Relation
+from .models import Author
 from .serializers import (
     AuthorSerializer,
-    ArticleSerializer,
-    RelationSerializer,
 )
 from .permissions import IsOwnerOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
@@ -44,52 +37,3 @@ class AuthorViewSet(
 
     def get_current_author(self):
         return super().get_queryset().get(user=self.request.user)
-
-
-class ArticleViewSet(ModelViewSet):
-    queryset = Article.objects.all()
-    serializer_class = ArticleSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
-    pagination_class = DefaultLimitOffsetPagination
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["author"]
-
-    def get_queryset(self):
-        current_author = self.request.user.author
-        subscriptions = [
-            i.target for i in Relation.objects.filter(subscriber=current_author)
-        ]
-        return (
-            super()
-            .get_queryset()
-            .filter(Q(author__in=subscriptions) | Q(author=current_author))
-            .order_by("-created_at")
-        )
-
-
-class SubscriberViewSet(ReadOnlyModelViewSet):
-    queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = DefaultLimitOffsetPagination
-    filter_backends = [SearchFilter]
-    search_fields = ["user__email"]
-
-    def get_queryset(self):
-        author = Author.objects.get(pk=self.kwargs["author_pk"])
-        subscribers = author.subscribers.values_list("subscriber", flat=True)
-        return super().get_queryset().filter(pk__in=subscribers)
-
-
-class SubscriptionViewSet(ReadOnlyModelViewSet):
-    queryset = Author.objects.all()
-    serializer_class = AuthorSerializer
-    permission_classes = [IsAuthenticated]
-    pagination_class = DefaultLimitOffsetPagination
-    filter_backends = [SearchFilter]
-    search_fields = ["user__email"]
-
-    def get_queryset(self):
-        author = Author.objects.get(pk=self.kwargs["author_pk"])
-        subscriptions = author.subscriptions.values_list("target", flat=True)
-        return super().get_queryset().filter(pk__in=subscriptions)

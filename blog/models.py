@@ -11,19 +11,19 @@ class Author(models.Model):
     subscriptions_count = models.PositiveIntegerField(default=0)
 
 
-class Relation(models.Model):
+class Subscription(models.Model):
     subscriber = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscriptions"
     )
-    target = models.ForeignKey(
+    author = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscribers"
     )
 
     class Meta:
-        unique_together = ["subscriber", "target"]
+        unique_together = ["subscriber", "author"]
 
     def __str__(self):
-        return f"{self.subscriber} subscribed to {self.target}"
+        return f"{self.subscriber} subscribed to {self.author}"
 
 
 class Article(models.Model):
