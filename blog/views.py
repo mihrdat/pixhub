@@ -56,11 +56,13 @@ class ArticleViewSet(ModelViewSet):
 
     def get_queryset(self):
         current_author = self.request.user.author
-        subscriptions = current_author.subscriptions.values_list("target", flat=True)
+        subscriptions = [
+            i.target for i in Relation.objects.filter(subscriber=current_author)
+        ]
         return (
             super()
             .get_queryset()
-            .filter(Q(author_id__in=subscriptions) | Q(author_id=current_author.pk))
+            .filter(Q(author__in=subscriptions) | Q(author=current_author))
             .order_by("-created_at")
         )
 
