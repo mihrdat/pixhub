@@ -9,6 +9,7 @@ class Author(models.Model):
     bio = models.CharField(max_length=255, blank=True, null=True)
     subscribers_count = models.PositiveIntegerField(default=0)
     subscriptions_count = models.PositiveIntegerField(default=0)
+    articles_count = models.PositiveIntegerField(default=0)
 
 
 class Subscription(models.Model):

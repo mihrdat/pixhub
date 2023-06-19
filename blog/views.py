@@ -9,16 +9,17 @@ from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
 )
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Author, Subscription
+from .models import Author, Subscription, Article
 from .serializers import (
     AuthorSerializer,
     SubscriptionSerializer,
     SubscriptionCreateSerializer,
+    ArticleSerializer,
 )
 from .permissions import IsOwnerOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
@@ -101,4 +102,40 @@ class SubscriptionViewSet(
         target.subscribers_count -= 1
         target.save(update_fields=["subscribers_count"])
 
+        return super().destroy(request, *args, **kwargs)
+
+
+class ArticleViewSet(ModelViewSet):
+    queryset = Article.objects.select_related("author")
+    serializer_class = ArticleSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    pagination_class = DefaultLimitOffsetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["author"]
+
+    def get_queryset(self):
+        current_author = self.request.user.author
+        subscriptions = [
+            i.target for i in current_author.subscriptions.select_related("target")
+        ]
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(author__in=subscriptions) | Q(author=current_author))
+            .order_by("-created_at")
+        )
+
+    @transaction.atomic()
+    def perform_create(self, serializer):
+        author = self.request.user.author
+        author.articles_count += 1
+        author.save(update_fields=["articles_count"])
+        return super().perform_create(serializer)
+
+    @transaction.atomic()
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        author = instance.author
+        author.articles_count -= 1
+        author.save(update_fields=["articles_count"])
         return super().destroy(request, *args, **kwargs)
