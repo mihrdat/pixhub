@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Author, Article, Subscription
@@ -21,6 +20,17 @@ class AuthorSerializer(serializers.ModelSerializer):
         read_only_fields = ["subscribers_count", "subscriptions_count"]
 
 
+class SimpleAuthorSerializer(serializers.ModelSerializer):
+    email = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Author
+        fields = ["id", "bio", "email"]
+
+    def get_email(self, author):
+        return author.user.email
+
+
 class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
@@ -34,6 +44,15 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
+    subscriber = AuthorSerializer(read_only=True)
+    target = AuthorSerializer(read_only=True)
+
+    class Meta:
+        model = Subscription
+        fields = ["id", "subscriber", "target"]
+
+
+class SubscriptionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = ["id", "subscriber", "target"]
@@ -55,15 +74,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
         return super().validate(attrs)
 
-    @transaction.atomic()
     def create(self, validated_data):
-        subscriber = self.context["request"].user.author
-        target = validated_data["target"]
-
-        subscriber.subscriptions_count += 1
-        subscriber.save(update_fields=["subscriptions_count"])
-        target.subscribers_count += 1
-        target.save(update_fields=["subscribers_count"])
-
-        validated_data["subscriber"] = subscriber
+        validated_data["subscriber"] = self.context["request"].user.author
         return super().create(validated_data)

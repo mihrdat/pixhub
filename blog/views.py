@@ -17,6 +17,7 @@ from .models import Author, Subscription
 from .serializers import (
     AuthorSerializer,
     SubscriptionSerializer,
+    SubscriptionCreateSerializer,
 )
 from .permissions import IsOwnerOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
@@ -53,7 +54,7 @@ class SubscriptionViewSet(
     DestroyModelMixin,
     GenericViewSet,
 ):
-    queryset = Subscription.objects.all()
+    queryset = Subscription.objects.select_related("subscriber__user", "target__user")
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = DefaultLimitOffsetPagination
@@ -65,6 +66,34 @@ class SubscriptionViewSet(
             .get_queryset()
             .filter(Q(subscriber=current_author) | Q(target=current_author))
         )
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            self.serializer_class = SubscriptionCreateSerializer
+        return super().get_serializer_class()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = self.perform_create(serializer)
+        serializer = SubscriptionSerializer(instance)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+    @transaction.atomic()
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        subscriber = instance.subscriber
+        target = instance.target
+
+        subscriber.subscriptions_count += 1
+        subscriber.save(update_fields=["subscriptions_count"])
+        target.subscribers_count += 1
+        target.save(update_fields=["subscribers_count"])
+
+        return instance
 
     @transaction.atomic()
     def destroy(self, request, *args, **kwargs):
