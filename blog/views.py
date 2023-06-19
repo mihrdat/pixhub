@@ -1,15 +1,22 @@
+from django.db import transaction
+from django.db.models import Q
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
     UpdateModelMixin,
+    CreateModelMixin,
+    DestroyModelMixin,
 )
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from .models import Author
+from .models import Author, Subscription
 from .serializers import (
     AuthorSerializer,
+    SubscriptionSerializer,
 )
 from .permissions import IsOwnerOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
@@ -37,3 +44,37 @@ class AuthorViewSet(
 
     def get_current_author(self):
         return super().get_queryset().get(user=self.request.user)
+
+
+class SubscriptionViewSet(
+    ListModelMixin,
+    RetrieveModelMixin,
+    CreateModelMixin,
+    DestroyModelMixin,
+    GenericViewSet,
+):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
+
+    def get_queryset(self):
+        current_author = self.request.user.author
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(subscriber=current_author) | Q(target=current_author))
+        )
+
+    @transaction.atomic()
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        subscriber = instance.subscriber
+        target = instance.target
+
+        subscriber.subscriptions_count -= 1
+        subscriber.save(update_fields=["subscriptions_count"])
+        target.subscribers_count -= 1
+        target.save(update_fields=["subscribers_count"])
+
+        return super().destroy(request, *args, **kwargs)

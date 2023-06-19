@@ -15,15 +15,15 @@ class Subscription(models.Model):
     subscriber = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscriptions"
     )
-    author = models.ForeignKey(
+    target = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscribers"
     )
 
     class Meta:
-        unique_together = ["subscriber", "author"]
+        unique_together = ["subscriber", "target"]
 
     def __str__(self):
-        return f"{self.subscriber} subscribed to {self.author}"
+        return f"{self.subscriber} subscribed to {self.target}"
 
 
 class Article(models.Model):
