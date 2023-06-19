@@ -44,8 +44,8 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    subscriber = AuthorSerializer(read_only=True)
-    target = AuthorSerializer(read_only=True)
+    subscriber = SimpleAuthorSerializer(read_only=True)
+    target = SimpleAuthorSerializer(read_only=True)
 
     class Meta:
         model = Subscription
