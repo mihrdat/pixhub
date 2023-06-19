@@ -33,7 +33,3 @@ class Article(models.Model):
     author = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="articles"
     )
-
-    @property
-    def user(self):
-        return self.author.user

@@ -57,18 +57,10 @@ class SubscriptionViewSet(
 ):
     queryset = Subscription.objects.select_related("subscriber__user", "target__user")
     serializer_class = SubscriptionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["subscriber", "target"]
-
-    def get_queryset(self):
-        current_author = self.request.user.author
-        return (
-            super()
-            .get_queryset()
-            .filter(Q(subscriber=current_author) | Q(target=current_author))
-        )
 
     def get_serializer_class(self):
         if self.action == "create":
