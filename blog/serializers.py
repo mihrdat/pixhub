@@ -25,7 +25,7 @@ class SimpleAuthorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Author
-        fields = ["id", "bio", "email"]
+        fields = ["id", "email"]
 
     def get_email(self, author):
         return author.user.email
