@@ -1,6 +1,19 @@
 version: "3.9"
 
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ./docker-entrypoint.sh
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+
   db:
     image: postgres:15.1-alpine
     ports:
@@ -17,12 +30,6 @@ services:
       - 6379:6379
     volumes:
       - redis-data:/data
-
-  smtp4dev:
-    image: rnwood/smtp4dev:3.2.0-ci20221023104
-    ports:
-      - 25:25
-      - 2525:80
 
   celery:
     build:
@@ -43,6 +50,12 @@ services:
       - redis
     volumes:
       - .:/app
+
+  smtp4dev:
+    image: rnwood/smtp4dev:3.2.0-ci20221023104
+    ports:
+      - 25:25
+      - 2525:80
 
   flower:
     build:
@@ -66,19 +79,6 @@ services:
     tty: true
     volumes:
       - .:/app
-
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    command: ./docker-entrypoint.sh
-    ports:
-      - 8000:8000
-    volumes:
-      - .:/app
-    depends_on:
-      - db
-      - redis
 
 volumes:
   postgres-data:
