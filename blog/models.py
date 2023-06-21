@@ -23,9 +23,6 @@ class Subscription(models.Model):
     class Meta:
         unique_together = ["subscriber", "target"]
 
-    def __str__(self):
-        return f"{self.subscriber} subscribed to {self.target}"
-
 
 class Article(models.Model):
     title = models.CharField(max_length=55)
