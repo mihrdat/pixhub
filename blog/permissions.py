@@ -15,3 +15,17 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
         elif isinstance(obj, Article):
             return request.user.author == obj.author
+
+
+class IsSubscriberOrReadPublicOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        current_author = request.user.author
+        author = Author.objects.get(pk=view.kwargs["author_pk"])
+
+        return bool(
+            current_author == author
+            or Subscription.objects.filter(
+                subscriber=current_author, target=author
+            ).exists()
+            or not author.is_private
+        )
