@@ -10,6 +10,7 @@ class Author(models.Model):
     subscribers_count = models.PositiveIntegerField(default=0)
     subscriptions_count = models.PositiveIntegerField(default=0)
     articles_count = models.PositiveIntegerField(default=0)
+    is_private = models.BooleanField(default=False)
 
 
 class Subscription(models.Model):
