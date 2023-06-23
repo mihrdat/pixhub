@@ -13,7 +13,16 @@ class Author(models.Model):
     is_private = models.BooleanField(default=False)
 
 
+class SubscriptionManager(models.Manager):
+    def get_subscriptions_for(self, author):
+        return Author.objects.filter(subscribers__subscriber=author)
+
+    def get_subscribers_for(self, author):
+        return Author.objects.filter(subscriptions__target=author)
+
+
 class Subscription(models.Model):
+    objects = SubscriptionManager()
     subscriber = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscriptions"
     )

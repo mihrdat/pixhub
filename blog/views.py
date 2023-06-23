@@ -9,7 +9,7 @@ from rest_framework.mixins import (
     CreateModelMixin,
     DestroyModelMixin,
 )
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -21,7 +21,7 @@ from .serializers import (
     SubscriptionCreateSerializer,
     ArticleSerializer,
 )
-from .permissions import IsOwnerOrReadOnly, IsSubscriberOrReadPublicOnly
+from .permissions import IsOwnerOrReadOnly
 from .pagination import DefaultLimitOffsetPagination
 
 
@@ -105,25 +105,35 @@ class SubscriptionViewSet(
         return super().destroy(request, *args, **kwargs)
 
 
-class ArticleViewSet(
-    ListModelMixin,
-    RetrieveModelMixin,
-    UpdateModelMixin,
-    DestroyModelMixin,
-    GenericViewSet,
-):
+class ArticleViewSet(ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-    permission_classes = [
-        IsAuthenticated,
-        IsOwnerOrReadOnly,
-        IsSubscriberOrReadPublicOnly,
-    ]
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["author"]
 
     def get_queryset(self):
-        author = self.kwargs["author_pk"]
-        return super().get_queryset().filter(author=author).order_by("-created_at")
+        current_author = self.get_current_author()
+        subscriptions = Subscription.objects.get_subscriptions_for(current_author)
+        public_articles = (
+            super()
+            .get_queryset()
+            .filter(author__in=Author.objects.filter(is_private=False))
+        )
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(author__in=subscriptions) | Q(author=current_author))
+            .order_by("-created_at")
+        ) | public_articles
+
+    @transaction.atomic()
+    def perform_create(self, serializer):
+        current_author = self.get_current_author()
+        current_author.articles_count += 1
+        current_author.save(update_fields=["articles_count"])
+        return super().perform_create(serializer)
 
     @transaction.atomic()
     def destroy(self, request, *args, **kwargs):
@@ -132,3 +142,6 @@ class ArticleViewSet(
         author.articles_count -= 1
         author.save(update_fields=["articles_count"])
         return super().destroy(request, *args, **kwargs)
+
+    def get_current_author(self):
+        return self.request.user.author
