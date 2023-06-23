@@ -61,6 +61,14 @@ class SubscriptionViewSet(
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["subscriber", "target"]
 
+    def get_queryset(self):
+        current_author = self.get_current_author()
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(subscriber=current_author) | Q(target=current_author))
+        )
+
     def get_serializer_class(self):
         if self.action == "create":
             self.serializer_class = SubscriptionCreateSerializer
@@ -91,6 +99,9 @@ class SubscriptionViewSet(
         target.save(update_fields=["subscribers_count"])
 
         return super().destroy(request, *args, **kwargs)
+
+    def get_current_author(self):
+        return self.request.user.author
 
 
 class ArticleViewSet(ModelViewSet):
