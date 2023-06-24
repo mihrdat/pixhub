@@ -17,6 +17,7 @@ from .serializers import (
     AuthorSerializer,
     SubscriptionSerializer,
     ArticleSerializer,
+    SimpleAuthorSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
 from .pagination import DefaultLimitOffsetPagination
@@ -65,7 +66,9 @@ class AuthorViewSet(
         return super().get_queryset()
 
     def get_serializer_class(self):
-        if self.action == "articles":
+        if self.action in ["subscriptions", "subscribers"]:
+            self.serializer_class = SimpleAuthorSerializer
+        elif self.action == "articles":
             self.serializer_class = ArticleSerializer
         return super().get_serializer_class()
 
@@ -75,7 +78,7 @@ class AuthorViewSet(
         return super().get_permissions()
 
     def get_current_author(self):
-        return super().get_queryset().get(user=self.request.user)
+        return self.request.user.author
 
 
 class SubscriptionViewSet(
@@ -93,7 +96,7 @@ class SubscriptionViewSet(
     filterset_fields = ["subscriber", "target"]
 
     def get_queryset(self):
-        current_author = self.get_current_author()
+        current_author = self.request.user.author
         return (
             super()
             .get_queryset()
@@ -127,9 +130,6 @@ class SubscriptionViewSet(
 
         return super().destroy(request, *args, **kwargs)
 
-    def get_current_author(self):
-        return self.request.user.author
-
 
 class ArticleViewSet(ModelViewSet):
     queryset = Article.objects.all()
@@ -140,13 +140,10 @@ class ArticleViewSet(ModelViewSet):
     filterset_fields = ["author"]
 
     def get_queryset(self):
-        current_author = self.get_current_author()
-        subscriptions = Subscription.objects.get_subscriptions_for(current_author)
-        public_articles = (
-            super()
-            .get_queryset()
-            .filter(author__in=Author.objects.filter(is_private=False))
-        )
+        current_author = self.request.user.author
+        subscriptions = Subscription.objects.get_subscriptions_for(current_author.pk)
+        public_authors = Author.objects.filter(is_private=False)
+        public_articles = Article.objects.filter(author__in=public_authors)
         return (
             super()
             .get_queryset()
@@ -156,7 +153,7 @@ class ArticleViewSet(ModelViewSet):
 
     @transaction.atomic()
     def perform_create(self, serializer):
-        current_author = self.get_current_author()
+        current_author = self.request.user.author
         current_author.articles_count += 1
         current_author.save(update_fields=["articles_count"])
         return super().perform_create(serializer)
@@ -168,6 +165,3 @@ class ArticleViewSet(ModelViewSet):
         author.articles_count -= 1
         author.save(update_fields=["articles_count"])
         return super().destroy(request, *args, **kwargs)
-
-    def get_current_author(self):
-        return self.request.user.author
