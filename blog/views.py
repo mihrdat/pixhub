@@ -16,7 +16,6 @@ from .models import Author, Subscription, Article
 from .serializers import (
     AuthorSerializer,
     SubscriptionSerializer,
-    SubscriptionCreateSerializer,
     ArticleSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
@@ -101,11 +100,6 @@ class SubscriptionViewSet(
             .filter(Q(subscriber=current_author) | Q(target=current_author))
             .order_by("-created_at")
         )
-
-    def get_serializer_class(self):
-        if self.action == "create":
-            self.serializer_class = SubscriptionCreateSerializer
-        return super().get_serializer_class()
 
     @transaction.atomic()
     def perform_create(self, serializer):

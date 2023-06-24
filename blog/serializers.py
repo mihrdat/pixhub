@@ -31,17 +31,6 @@ class AuthorSerializer(serializers.ModelSerializer):
         ]
 
 
-class SimpleAuthorSerializer(serializers.ModelSerializer):
-    email = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = Author
-        fields = ["id", "email"]
-
-    def get_email(self, author):
-        return author.user.email
-
-
 class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
@@ -55,15 +44,6 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    subscriber = SimpleAuthorSerializer(read_only=True)
-    target = SimpleAuthorSerializer(read_only=True)
-
-    class Meta:
-        model = Subscription
-        fields = ["id", "subscriber", "target"]
-
-
-class SubscriptionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = ["id", "subscriber", "target"]
