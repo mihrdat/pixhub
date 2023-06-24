@@ -6,6 +6,7 @@ User = get_user_model()
 
 class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
@@ -21,11 +22,19 @@ class Author(BaseModel):
 
 
 class SubscriptionManager(models.Manager):
-    def get_subscriptions_for(self, author):
-        return Author.objects.filter(subscribers__subscriber=author)
+    def get_subscriptions_for(self, author_id):
+        return (
+            Author.objects.filter(subscribers__subscriber_id=author_id)
+            .select_related("user")
+            .order_by("-created_at")
+        )
 
-    def get_subscribers_for(self, author):
-        return Author.objects.filter(subscriptions__target=author)
+    def get_subscribers_for(self, author_id):
+        return (
+            Author.objects.filter(subscriptions__target_id=author_id)
+            .select_related("user")
+            .order_by("-created_at")
+        )
 
 
 class Subscription(BaseModel):
@@ -41,7 +50,13 @@ class Subscription(BaseModel):
         unique_together = ["subscriber", "target"]
 
 
+class ArticleManager(models.Manager):
+    def get_articles_for(self, author_id):
+        return Article.objects.filter(author_id=author_id).order_by("-created_at")
+
+
 class Article(BaseModel):
+    objects = ArticleManager()
     title = models.CharField(max_length=55)
     content = models.TextField(max_length=255, blank=True, null=True)
     author = models.ForeignKey(

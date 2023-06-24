@@ -44,34 +44,34 @@ class AuthorViewSet(
 
     @action(methods=["GET"], detail=True)
     def subscriptions(self, request, *args, **kwargs):
-        author = Author.objects.get(pk=self.kwargs["pk"])
-        self.queryset = (
-            Subscription.objects.get_subscriptions_for(author)
-            .select_related("user")
-            .order_by("-created_at")
-        )
         return self.list(request, *args, **kwargs)
 
     @action(methods=["GET"], detail=True)
     def subscribers(self, request, *args, **kwargs):
-        author = Author.objects.get(pk=self.kwargs["pk"])
-        self.queryset = (
-            Subscription.objects.get_subscribers_for(author)
-            .select_related("user")
-            .order_by("-created_at")
-        )
         return self.list(request, *args, **kwargs)
 
     @action(methods=["GET"], detail=True)
     def articles(self, request, *args, **kwargs):
-        author = Author.objects.get(pk=self.kwargs["pk"])
-        self.serializer_class = ArticleSerializer
-        self.queryset = Article.objects.filter(author=author).order_by("-created_at")
         return self.list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        author_id = self.kwargs["pk"]
+        if self.action == "subscriptions":
+            self.queryset = Subscription.objects.get_subscriptions_for(author_id)
+        elif self.action == "subscribers":
+            self.queryset = Subscription.objects.get_subscribers_for(author_id)
+        elif self.action == "articles":
+            self.queryset = Article.objects.get_articles_for(author_id)
+        return super().get_queryset()
+
+    def get_serializer_class(self):
+        if self.action == "articles":
+            self.serializer_class = ArticleSerializer
+        return super().get_serializer_class()
 
     def get_permissions(self):
         if self.action in ["subscriptions", "subscribers", "articles"]:
-            self.permission_classes.append(HasAccessAuthorContent)
+            self.permission_classes = [IsAuthenticated, HasAccessAuthorContent]
         return super().get_permissions()
 
     def get_current_author(self):
@@ -85,7 +85,7 @@ class SubscriptionViewSet(
     DestroyModelMixin,
     GenericViewSet,
 ):
-    queryset = Subscription.objects.select_related("subscriber__user", "target__user")
+    queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = DefaultLimitOffsetPagination
