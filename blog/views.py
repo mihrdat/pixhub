@@ -19,7 +19,7 @@ from .serializers import (
     SubscriptionCreateSerializer,
     ArticleSerializer,
 )
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
 from .pagination import DefaultLimitOffsetPagination
 
 
@@ -43,6 +43,38 @@ class AuthorViewSet(
         elif request.method == "PATCH":
             return self.partial_update(request, *args, **kwargs)
 
+    @action(methods=["GET"], detail=True)
+    def subscriptions(self, request, *args, **kwargs):
+        author = Author.objects.get(pk=self.kwargs["pk"])
+        self.queryset = (
+            Subscription.objects.get_subscriptions_for(author)
+            .select_related("user")
+            .order_by("-created_at")
+        )
+        return self.list(request, *args, **kwargs)
+
+    @action(methods=["GET"], detail=True)
+    def subscribers(self, request, *args, **kwargs):
+        author = Author.objects.get(pk=self.kwargs["pk"])
+        self.queryset = (
+            Subscription.objects.get_subscribers_for(author)
+            .select_related("user")
+            .order_by("-created_at")
+        )
+        return self.list(request, *args, **kwargs)
+
+    @action(methods=["GET"], detail=True)
+    def articles(self, request, *args, **kwargs):
+        author = Author.objects.get(pk=self.kwargs["pk"])
+        self.serializer_class = ArticleSerializer
+        self.queryset = Article.objects.filter(author=author).order_by("-created_at")
+        return self.list(request, *args, **kwargs)
+
+    def get_permissions(self):
+        if self.action in ["subscriptions", "subscribers", "articles"]:
+            self.permission_classes.append(HasAccessAuthorContent)
+        return super().get_permissions()
+
     def get_current_author(self):
         return super().get_queryset().get(user=self.request.user)
 
@@ -56,7 +88,7 @@ class SubscriptionViewSet(
 ):
     queryset = Subscription.objects.select_related("subscriber__user", "target__user")
     serializer_class = SubscriptionSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated]
     pagination_class = DefaultLimitOffsetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["subscriber", "target"]
@@ -67,6 +99,7 @@ class SubscriptionViewSet(
             super()
             .get_queryset()
             .filter(Q(subscriber=current_author) | Q(target=current_author))
+            .order_by("-created_at")
         )
 
     def get_serializer_class(self):

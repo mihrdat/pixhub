@@ -4,7 +4,14 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class Author(models.Model):
+class BaseModel(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+
+class Author(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.CharField(max_length=255, blank=True, null=True)
     subscribers_count = models.PositiveIntegerField(default=0)
@@ -21,7 +28,7 @@ class SubscriptionManager(models.Manager):
         return Author.objects.filter(subscriptions__target=author)
 
 
-class Subscription(models.Model):
+class Subscription(BaseModel):
     objects = SubscriptionManager()
     subscriber = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscriptions"
@@ -34,10 +41,13 @@ class Subscription(models.Model):
         unique_together = ["subscriber", "target"]
 
 
-class Article(models.Model):
+class Article(BaseModel):
     title = models.CharField(max_length=55)
     content = models.TextField(max_length=255, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="articles"
     )
+
+    @property
+    def user(self):
+        return self.author.user
