@@ -55,7 +55,7 @@ class AuthorViewSet(
         return self.list(request, *args, **kwargs)
 
     def get_queryset(self):
-        author_id = self.kwargs["pk"]
+        author_id = self.kwargs.get("pk")
         if self.action == "subscriptions":
             self.queryset = Subscription.objects.get_subscriptions_for(author_id)
         elif self.action == "subscribers":

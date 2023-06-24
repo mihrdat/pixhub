@@ -37,7 +37,7 @@ class SubscriptionManager(models.Manager):
         )
 
 
-class Subscription(BaseModel):
+class Subscription(models.Model):
     objects = SubscriptionManager()
     subscriber = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscriptions"
@@ -45,6 +45,7 @@ class Subscription(BaseModel):
     target = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="subscribers"
     )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ["subscriber", "target"]
