@@ -1,11 +1,13 @@
+from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Q
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
     UpdateModelMixin,
     CreateModelMixin,
-    DestroyModelMixin,
 )
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework.permissions import IsAuthenticated
@@ -15,9 +17,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Author, Subscription, Article
 from .serializers import (
     AuthorSerializer,
-    SubscriptionSerializer,
+    SubscriptionCreateSerializer,
     ArticleSerializer,
     SimpleAuthorSerializer,
+    UnsubscribeSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
 from .pagination import DefaultLimitOffsetPagination
@@ -81,28 +84,31 @@ class AuthorViewSet(
         return self.request.user.author
 
 
-class SubscriptionViewSet(
-    ListModelMixin,
-    RetrieveModelMixin,
-    CreateModelMixin,
-    DestroyModelMixin,
-    GenericViewSet,
-):
+class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
     queryset = Subscription.objects.all()
-    serializer_class = SubscriptionSerializer
+    serializer_class = SubscriptionCreateSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = DefaultLimitOffsetPagination
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["subscriber", "target"]
 
-    def get_queryset(self):
-        current_author = self.request.user.author
-        return (
-            super()
-            .get_queryset()
-            .filter(Q(subscriber=current_author) | Q(target=current_author))
-            .order_by("-created_at")
+    @action(methods=["DELETE"], detail=False, serializer_class=UnsubscribeSerializer)
+    def unsubscribe(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = get_object_or_404(
+            Subscription,
+            subscriber_id=self.request.user.author.pk,
+            target_id=self.request.data["target_id"],
         )
+        instance.delete()
+
+        subscriber = instance.subscriber
+        target = instance.target
+
+        subscriber.subscriptions_count -= 1
+        subscriber.save(update_fields=["subscriptions_count"])
+        target.subscribers_count -= 1
+        target.save(update_fields=["subscribers_count"])
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @transaction.atomic()
     def perform_create(self, serializer):
@@ -116,19 +122,6 @@ class SubscriptionViewSet(
         target.save(update_fields=["subscribers_count"])
 
         return instance
-
-    @transaction.atomic()
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        subscriber = instance.subscriber
-        target = instance.target
-
-        subscriber.subscriptions_count -= 1
-        subscriber.save(update_fields=["subscriptions_count"])
-        target.subscribers_count -= 1
-        target.save(update_fields=["subscribers_count"])
-
-        return super().destroy(request, *args, **kwargs)
 
 
 class ArticleViewSet(ModelViewSet):

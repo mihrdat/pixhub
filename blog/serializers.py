@@ -24,10 +24,10 @@ class AuthorSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "bio",
-            "email",
             "subscribers_count",
             "subscriptions_count",
             "articles_count",
+            "email",
         ]
         read_only_fields = [
             "subscribers_count",
@@ -51,7 +51,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
+class SubscriptionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = ["id", "subscriber", "target"]
@@ -76,3 +76,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["subscriber"] = self.context["request"].user.author
         return super().create(validated_data)
+
+
+class UnsubscribeSerializer(serializers.Serializer):
+    target_id = serializers.IntegerField()
