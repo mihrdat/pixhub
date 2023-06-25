@@ -21,6 +21,7 @@ from .serializers import (
     ArticleSerializer,
     SimpleAuthorSerializer,
     UnsubscribeSerializer,
+    RemoveSubscriptionSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
 from .pagination import DefaultLimitOffsetPagination
@@ -89,15 +90,23 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
     serializer_class = SubscriptionCreateSerializer
     permission_classes = [IsAuthenticated]
 
-    @action(methods=["DELETE"], detail=False, serializer_class=UnsubscribeSerializer)
+    @action(methods=["DELETE"], detail=False)
     def unsubscribe(self, request, *args, **kwargs):
+        return self.destroy_subscription(request, *args, **kwargs)
+
+    @action(methods=["DELETE"], detail=False)
+    def remove(self, request, *args, **kwargs):
+        return self.destroy_subscription(request, *args, **kwargs)
+
+    def destroy_subscription(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = get_object_or_404(
-            Subscription,
-            subscriber_id=self.request.user.author.pk,
-            target_id=self.request.data["target_id"],
-        )
+        instance = self.get_object()
+        self.perform_destroy_subscription(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @transaction.atomic()
+    def perform_destroy_subscription(self, instance):
         instance.delete()
 
         subscriber = instance.subscriber
@@ -108,7 +117,21 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
         target.subscribers_count -= 1
         target.save(update_fields=["subscribers_count"])
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def get_object(self):
+        current_author_id = self.request.user.author.pk
+        if self.action == "unsubscribe":
+            return get_object_or_404(
+                Subscription,
+                subscriber_id=current_author_id,
+                target_id=self.request.data["target_id"],
+            )
+        elif self.action == "remove":
+            return get_object_or_404(
+                Subscription,
+                subscriber_id=self.request.data["subscriber_id"],
+                target_id=current_author_id,
+            )
+        return super().get_object()
 
     @transaction.atomic()
     def perform_create(self, serializer):
@@ -122,6 +145,13 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
         target.save(update_fields=["subscribers_count"])
 
         return instance
+
+    def get_serializer_class(self):
+        if self.action == "unsubscribe":
+            self.serializer_class = UnsubscribeSerializer
+        if self.action == "remove":
+            self.serializer_class = RemoveSubscriptionSerializer
+        return super().get_serializer_class()
 
 
 class ArticleViewSet(ModelViewSet):

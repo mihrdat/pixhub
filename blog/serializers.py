@@ -52,31 +52,39 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionCreateSerializer(serializers.ModelSerializer):
+    target_id = serializers.PrimaryKeyRelatedField(queryset=Author.objects.all())
+
     class Meta:
         model = Subscription
-        fields = ["id", "subscriber", "target"]
-        read_only_fields = ["subscriber"]
+        fields = ["id", "subscriber_id", "target_id"]
+        read_only_fields = ["subscriber_id"]
 
     def validate(self, attrs):
-        subscriber = self.context["request"].user.author
-        target = attrs["target"]
+        subscriber_id = self.context["request"].user.author.pk
+        target_id = attrs["target_id"]
 
-        if subscriber == target:
+        if subscriber_id == target_id:
             raise serializers.ValidationError(
-                {"target": "You cannot subscribe to yourself."}
+                {"target_id": "You cannot subscribe to yourself."}
             )
 
-        if Subscription.objects.filter(subscriber=subscriber, target=target).exists():
+        if Subscription.objects.filter(
+            subscriber_id=subscriber_id, target_id=target_id
+        ).exists():
             raise serializers.ValidationError(
-                {"target": "You have already subscribed to this author."}
+                {"target_id": "You have already subscribed to this author."}
             )
 
         return super().validate(attrs)
 
     def create(self, validated_data):
-        validated_data["subscriber"] = self.context["request"].user.author
+        validated_data["subscriber_id"] = self.context["request"].user.author.pk
         return super().create(validated_data)
 
 
 class UnsubscribeSerializer(serializers.Serializer):
     target_id = serializers.IntegerField()
+
+
+class RemoveSubscriptionSerializer(serializers.Serializer):
+    subscriber_id = serializers.IntegerField()
