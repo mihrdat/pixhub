@@ -31,7 +31,7 @@ class AuthorViewSet(
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
     filter_backends = [SearchFilter]
-    search_fields = ["user__email"]
+    search_fields = ["email"]
 
     @action(methods=["GET", "PUT", "PATCH"], detail=False)
     def me(self, request, *args, **kwargs):

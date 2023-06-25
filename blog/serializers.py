@@ -5,12 +5,6 @@ from .models import Author, Article, Subscription
 User = get_user_model()
 
 
-class SimpleUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "email"]
-
-
 class SimpleAuthorSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField()
 
@@ -23,23 +17,26 @@ class SimpleAuthorSerializer(serializers.ModelSerializer):
 
 
 class AuthorSerializer(serializers.ModelSerializer):
-    user = SimpleUserSerializer(read_only=True)
+    email = serializers.SerializerMethodField()
 
     class Meta:
         model = Author
         fields = [
             "id",
             "bio",
+            "email",
             "subscribers_count",
             "subscriptions_count",
             "articles_count",
-            "user",
         ]
         read_only_fields = [
             "subscribers_count",
             "subscriptions_count",
             "articles_count",
         ]
+
+    def get_email(self, author):
+        return author.user.email
 
 
 class ArticleSerializer(serializers.ModelSerializer):
