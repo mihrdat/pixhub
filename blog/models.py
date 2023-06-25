@@ -51,13 +51,7 @@ class Subscription(models.Model):
         unique_together = ["subscriber", "target"]
 
 
-class ArticleManager(models.Manager):
-    def get_articles_for(self, author_id):
-        return Article.objects.filter(author_id=author_id).order_by("-created_at")
-
-
 class Article(BaseModel):
-    objects = ArticleManager()
     title = models.CharField(max_length=55)
     content = models.TextField(max_length=255, blank=True, null=True)
     author = models.ForeignKey(

@@ -19,7 +19,6 @@ from .serializers import (
     AuthorSerializer,
     SubscriptionCreateSerializer,
     ArticleSerializer,
-    SimpleAuthorSerializer,
     UnsubscribeSerializer,
     RemoveSubscriptionSerializer,
 )
@@ -35,7 +34,7 @@ class AuthorViewSet(
     permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
     pagination_class = DefaultLimitOffsetPagination
     filter_backends = [SearchFilter]
-    search_fields = ["email"]
+    search_fields = ["user__email"]
 
     @action(methods=["GET", "PUT", "PATCH"], detail=False)
     def me(self, request, *args, **kwargs):
@@ -55,29 +54,16 @@ class AuthorViewSet(
     def subscribers(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-    @action(methods=["GET"], detail=True)
-    def articles(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
     def get_queryset(self):
         author_id = self.kwargs.get("pk")
         if self.action == "subscriptions":
             self.queryset = Subscription.objects.get_subscriptions_for(author_id)
         elif self.action == "subscribers":
             self.queryset = Subscription.objects.get_subscribers_for(author_id)
-        elif self.action == "articles":
-            self.queryset = Article.objects.get_articles_for(author_id)
         return super().get_queryset()
 
-    def get_serializer_class(self):
-        if self.action in ["subscriptions", "subscribers"]:
-            self.serializer_class = SimpleAuthorSerializer
-        elif self.action == "articles":
-            self.serializer_class = ArticleSerializer
-        return super().get_serializer_class()
-
     def get_permissions(self):
-        if self.action in ["subscriptions", "subscribers", "articles"]:
+        if self.action in ["subscriptions", "subscribers"]:
             self.permission_classes = [IsAuthenticated, HasAccessAuthorContent]
         return super().get_permissions()
 
