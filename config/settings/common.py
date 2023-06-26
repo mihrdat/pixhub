@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "utils",
     "users",
     "blog",
+    "chat",
 ]
 
 MIDDLEWARE = [
