@@ -19,9 +19,9 @@ class UserViewSet(ModelViewSet):
         self.get_object = self.get_current_user
         if request.method == "GET":
             return self.retrieve(request, *args, **kwargs)
-        elif request.method == "PUT":
+        if request.method == "PUT":
             return self.update(request, *args, **kwargs)
-        elif request.method == "PATCH":
+        if request.method == "PATCH":
             return self.partial_update(request, *args, **kwargs)
 
     def get_current_user(self):

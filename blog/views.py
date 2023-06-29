@@ -41,9 +41,9 @@ class AuthorViewSet(
         self.get_object = self.get_current_author
         if request.method == "GET":
             return self.retrieve(request, *args, **kwargs)
-        elif request.method == "PUT":
+        if request.method == "PUT":
             return self.update(request, *args, **kwargs)
-        elif request.method == "PATCH":
+        if request.method == "PATCH":
             return self.partial_update(request, *args, **kwargs)
 
     @action(methods=["GET"], detail=True)
@@ -58,7 +58,7 @@ class AuthorViewSet(
         author_id = self.kwargs.get("pk")
         if self.action == "subscriptions":
             self.queryset = Subscription.objects.get_subscriptions_for(author_id)
-        elif self.action == "subscribers":
+        if self.action == "subscribers":
             self.queryset = Subscription.objects.get_subscribers_for(author_id)
         return super().get_queryset()
 
@@ -111,7 +111,7 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
                 subscriber_id=current_author_id,
                 target_id=self.request.data["target_id"],
             )
-        elif self.action == "remove":
+        if self.action == "remove":
             return get_object_or_404(
                 Subscription,
                 subscriber_id=self.request.data["subscriber_id"],
