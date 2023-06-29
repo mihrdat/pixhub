@@ -75,5 +75,5 @@ class UnsubscribeSerializer(serializers.Serializer):
     target_id = serializers.IntegerField()
 
 
-class RemoveSubscriptionSerializer(serializers.Serializer):
+class RemoveSubscriberSerializer(serializers.Serializer):
     subscriber_id = serializers.IntegerField()

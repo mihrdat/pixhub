@@ -20,7 +20,7 @@ from .serializers import (
     SubscriptionCreateSerializer,
     ArticleSerializer,
     UnsubscribeSerializer,
-    RemoveSubscriptionSerializer,
+    RemoveSubscriberSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
 from .pagination import DefaultLimitOffsetPagination
@@ -136,7 +136,7 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
         if self.action == "unsubscribe":
             self.serializer_class = UnsubscribeSerializer
         if self.action == "remove":
-            self.serializer_class = RemoveSubscriptionSerializer
+            self.serializer_class = RemoveSubscriberSerializer
         return super().get_serializer_class()
 
 
