@@ -22,16 +22,16 @@ class Author(BaseModel):
 
 
 class SubscriptionManager(models.Manager):
-    def get_subscriptions_for(self, author_id):
+    def get_subscriptions_for(self, author):
         return (
-            Author.objects.filter(subscribers__subscriber_id=author_id)
+            Author.objects.filter(subscribers__subscriber=author)
             .select_related("user")
             .order_by("-created_at")
         )
 
-    def get_subscribers_for(self, author_id):
+    def get_subscribers_for(self, author):
         return (
-            Author.objects.filter(subscriptions__target_id=author_id)
+            Author.objects.filter(subscriptions__target=author)
             .select_related("user")
             .order_by("-created_at")
         )

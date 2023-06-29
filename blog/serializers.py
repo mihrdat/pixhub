@@ -22,6 +22,7 @@ class AuthorSerializer(serializers.ModelSerializer):
             "subscribers_count",
             "subscriptions_count",
             "articles_count",
+            "email",
         ]
 
     def get_email(self, author):
@@ -41,39 +42,34 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionCreateSerializer(serializers.ModelSerializer):
-    target_id = serializers.PrimaryKeyRelatedField(queryset=Author.objects.all())
-
     class Meta:
         model = Subscription
-        fields = ["id", "subscriber_id", "target_id"]
-        read_only_fields = ["subscriber_id"]
+        fields = ["id", "subscriber", "target"]
+        read_only_fields = ["subscriber"]
 
     def validate(self, attrs):
-        subscriber_id = self.context["request"].user.author.pk
-        target_id = attrs["target_id"]
+        subscriber = self.context["request"].user.author
+        target = attrs["target"]
 
-        if subscriber_id == target_id:
+        if subscriber == target:
             raise serializers.ValidationError(
-                {"target_id": "You cannot subscribe to yourself."}
+                {"target": "You cannot subscribe to yourself."}
             )
-
-        if Subscription.objects.filter(
-            subscriber_id=subscriber_id, target_id=target_id
-        ).exists():
+        if Subscription.objects.filter(subscriber=subscriber, target=target).exists():
             raise serializers.ValidationError(
-                {"target_id": "You have already subscribed to this author."}
+                {"target": "You have already subscribed to this author."}
             )
 
         return super().validate(attrs)
 
     def create(self, validated_data):
-        validated_data["subscriber_id"] = self.context["request"].user.author.pk
+        validated_data["subscriber"] = self.context["request"].user.author
         return super().create(validated_data)
 
 
 class UnsubscribeSerializer(serializers.Serializer):
-    target_id = serializers.IntegerField()
+    target = serializers.PrimaryKeyRelatedField(queryset=Author.objects.all())
 
 
 class RemoveSubscriberSerializer(serializers.Serializer):
-    subscriber_id = serializers.IntegerField()
+    subscriber = serializers.PrimaryKeyRelatedField(queryset=Author.objects.all())
