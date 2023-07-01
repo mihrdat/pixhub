@@ -21,6 +21,7 @@ from .serializers import (
     ArticleSerializer,
     UnsubscribeSerializer,
     RemoveSubscriberSerializer,
+    SimpleAuthorSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
 from .pagination import DefaultLimitOffsetPagination
@@ -65,6 +66,8 @@ class AuthorViewSet(
         return self.list(request, *args, **kwargs)
 
     def get_serializer_class(self):
+        if self.action in ["subscriptions", "subscribers"]:
+            self.serializer_class = SimpleAuthorSerializer
         if self.action == "articles":
             self.serializer_class = ArticleSerializer
         return super().get_serializer_class()
