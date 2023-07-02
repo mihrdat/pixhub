@@ -159,15 +159,30 @@ class ArticleViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["author"]
 
+    @action(methods=["GET"], detail=False)
+    def feed(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
     def get_queryset(self):
+        if self.request.user.is_staff:
+            return super().get_queryset()
+
         current_author = self.get_current_author()
         subscriptions = Subscription.objects.get_subscriptions_for(current_author)
-        return (
+        articles = (
             super()
             .get_queryset()
             .filter(Q(author__in=subscriptions) | Q(author=current_author))
             .order_by("-created_at")
         )
+
+        if self.action == "feed":
+            return articles
+
+        public_authors = Author.objects.filter(is_private=False)
+        public_articles = Article.objects.filter(author__in=public_authors)
+
+        return articles | public_articles
 
     @transaction.atomic
     def perform_create(self, serializer):
