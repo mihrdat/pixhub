@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Q
 from rest_framework import status
@@ -39,7 +38,6 @@ class AuthorViewSet(
 
     @action(methods=["GET", "PUT", "PATCH"], detail=False)
     def me(self, request, *args, **kwargs):
-        self.get_object = self.get_instance
         if request.method == "GET":
             return self.retrieve(request, *args, **kwargs)
         if request.method == "PUT":
@@ -77,8 +75,10 @@ class AuthorViewSet(
             self.permission_classes = [IsAuthenticated, HasAccessAuthorContent]
         return super().get_permissions()
 
-    def get_instance(self):
-        return self.get_current_author()
+    def get_object(self):
+        if self.action == "me":
+            return self.get_current_author()
+        return super().get_object()
 
     def get_current_author(self):
         return self.request.user.author
@@ -91,18 +91,16 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
 
     @action(methods=["DELETE"], detail=False)
     def unsubscribe(self, request, *args, **kwargs):
-        self.get_object = self.get_instance
         return self.destroy_subscription(request, *args, **kwargs)
 
     @action(methods=["DELETE"], detail=False)
     def remove(self, request, *args, **kwargs):
-        self.get_object = self.get_instance
         return self.destroy_subscription(request, *args, **kwargs)
 
     def destroy_subscription(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = self.get_object()
+        instance = self.get_object(serializer.validated_data)
         self.perform_destroy_subscription(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -137,20 +135,17 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
             self.serializer_class = RemoveSubscriberSerializer
         return super().get_serializer_class()
 
-    def get_instance(self):
+    def get_object(self, validated_data):
         current_author = self.get_current_author()
         if self.action == "unsubscribe":
-            return get_object_or_404(
-                Subscription,
-                subscriber=current_author,
-                target=self.request.data["target"],
+            return Subscription.objects.get(
+                subscriber=current_author, target=validated_data["target"]
             )
         if self.action == "remove":
-            return get_object_or_404(
-                Subscription,
-                subscriber=self.request.data["subscriber"],
-                target=current_author,
+            return Subscription.objects.get(
+                subscriber=validated_data["subscriber"], target=current_author
             )
+        return super().get_object()
 
     def get_current_author(self):
         return self.request.user.author
