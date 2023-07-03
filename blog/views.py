@@ -24,6 +24,7 @@ from .serializers import (
 )
 from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
 from .pagination import DefaultLimitOffsetPagination
+from .throttling import SubscriptionUserRateThrottle
 
 
 class AuthorViewSet(
@@ -88,6 +89,7 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionCreateSerializer
     permission_classes = [IsAuthenticated]
+    throttle_classes = [SubscriptionUserRateThrottle]
 
     @action(methods=["DELETE"], detail=False)
     def unsubscribe(self, request, *args, **kwargs):
