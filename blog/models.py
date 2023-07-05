@@ -51,8 +51,27 @@ class Article(models.Model):
     author = models.ForeignKey(
         Author, on_delete=models.CASCADE, related_name="articles"
     )
+    likes_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def user(self):
+        return self.author.user
+
+
+class LikedItemManager(models.Manager):
+    def get_likes_for(self, article):
+        return Author.objects.filter(likes__article=article).select_related("user")
+
+
+class LikedItem(models.Model):
+    author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name="likes")
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["author", "article"]
 
     @property
     def user(self):
