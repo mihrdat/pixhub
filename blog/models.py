@@ -61,11 +61,12 @@ class Article(models.Model):
 
 
 class LikedItemManager(models.Manager):
-    def get_likes_for(self, article):
-        return Author.objects.filter(likes__article=article).select_related("user")
+    def get_likes_for(self, article_id):
+        return Author.objects.filter(likes__article=article_id).select_related("user")
 
 
 class LikedItem(models.Model):
+    objects = LikedItemManager()
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name="likes")
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name="likes")
     created_at = models.DateTimeField(auto_now_add=True)

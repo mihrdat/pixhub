@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Q
 from rest_framework import status
@@ -13,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Author, Subscription, Article
+from .models import Author, Subscription, Article, LikedItem
 from .serializers import (
     AuthorSerializer,
     SubscriptionCreateSerializer,
@@ -21,6 +22,7 @@ from .serializers import (
     UnsubscribeSerializer,
     RemoveSubscriberSerializer,
     SimpleAuthorSerializer,
+    LikeSerializer,
 )
 from .permissions import IsOwnerOrReadOnly, HasAccessAuthorContent
 from .pagination import DefaultLimitOffsetPagination
@@ -120,7 +122,7 @@ class SubscriptionViewSet(CreateModelMixin, GenericViewSet):
 
     @transaction.atomic
     def perform_create(self, serializer):
-        subscriber = self.request.user.author
+        subscriber = self.get_current_author()
         target = serializer.validated_data["target"]
 
         subscriber.subscriptions_count += 1
@@ -161,31 +163,6 @@ class ArticleViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["author"]
 
-    @action(methods=["GET"], detail=False)
-    def feed(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-    def get_queryset(self):
-        if self.request.user.is_staff:
-            return super().get_queryset()
-
-        current_author = self.get_current_author()
-        subscriptions = Subscription.objects.get_subscriptions_for(current_author)
-        articles = (
-            super()
-            .get_queryset()
-            .filter(Q(author__in=subscriptions) | Q(author=current_author))
-            .order_by("-created_at")
-        )
-
-        if self.action == "feed":
-            return articles
-
-        public_authors = Author.objects.filter(is_private=False)
-        public_articles = Article.objects.filter(author__in=public_authors)
-
-        return articles | public_articles
-
     @transaction.atomic
     def perform_create(self, serializer):
         current_author = self.get_current_author()
@@ -200,5 +177,69 @@ class ArticleViewSet(ModelViewSet):
         author.save(update_fields=["articles_count"])
         return super().perform_destroy(instance)
 
+    def get_queryset(self):
+        current_author = self.get_current_author()
+        subscriptions = Subscription.objects.get_subscriptions_for(current_author)
+
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(author__in=subscriptions) | Q(author=current_author))
+            .order_by("-created_at")
+        )
+
     def get_current_author(self):
         return self.request.user.author
+
+
+class LikeViewSet(ListModelMixin, CreateModelMixin, GenericViewSet):
+    queryset = LikedItem.objects.select_related("author__user")
+    serializer_class = LikeSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = DefaultLimitOffsetPagination
+
+    @action(methods=["DELETE"], detail=False)
+    def dislike(self, request, *args, **kwargs):
+        return self.destroy_like(request, *args, **kwargs)
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        article = Article.objects.get(pk=self.kwargs["article_pk"])
+        article.likes_count += 1
+        article.save(update_fields=["likes_count"])
+        return super().perform_create(serializer)
+
+    def destroy_like(self, request, *args, **kwargs):
+        instance = get_object_or_404(
+            LikedItem,
+            author=self.get_current_author(),
+            article_id=self.kwargs["article_pk"],
+        )
+        self.perform_destroy_like(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @transaction.atomic
+    def perform_destroy_like(self, instance):
+        article = instance.article
+
+        article.likes_count -= 1
+        article.save(update_fields=["likes_count"])
+
+        instance.delete()
+
+    def get_queryset(self):
+        article_id = self.kwargs["article_pk"]
+        return LikedItem.objects.get_likes_for(article_id)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["article_id"] = self.kwargs["article_pk"]
+        return context
+
+    def get_current_author(self):
+        return self.request.user.author
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            self.serializer_class = SimpleAuthorSerializer
+        return super().get_serializer_class()

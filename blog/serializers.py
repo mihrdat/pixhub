@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Author, Article, Subscription
+from .models import Author, Article, Subscription, LikedItem
 
 User = get_user_model()
 
@@ -43,12 +43,11 @@ class AuthorSerializer(serializers.ModelSerializer):
 class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
-        fields = ["id", "title", "content", "created_at", "author"]
-        read_only_fields = ["author"]
+        fields = ["id", "title", "content", "created_at", "author", "likes_count"]
+        read_only_fields = ["author", "likes_count"]
 
     def create(self, validated_data):
-        request = self.context["request"]
-        validated_data["author"] = request.user.author
+        validated_data["author"] = self.context["request"].user.author
         return super().create(validated_data)
 
 
@@ -111,3 +110,29 @@ class RemoveSubscriberSerializer(serializers.Serializer):
             )
 
         return super().validate(data)
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    author = SimpleAuthorSerializer(read_only=True)
+
+    class Meta:
+        model = LikedItem
+        fields = ["author"]
+
+    def validate(self, data):
+        current_author = self.context["request"].user.author
+        article_id = self.context["article_id"]
+
+        if LikedItem.objects.filter(
+            author=current_author, article_id=article_id
+        ).exists():
+            raise serializers.ValidationError(
+                {"author": "You have already liked this article."}
+            )
+
+        return super().validate(data)
+
+    def create(self, validated_data):
+        validated_data["author"] = self.context["request"].user.author
+        validated_data["article_id"] = self.context["article_id"]
+        return super().create(validated_data)
