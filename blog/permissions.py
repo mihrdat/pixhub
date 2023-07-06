@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from .models import Author, Subscription
+from .models import Subscription
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -10,14 +10,12 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class HasAccessAuthorContent(permissions.BasePermission):
-    def has_permission(self, request, view):
+    def has_object_permission(self, request, view, obj):
         current_author = request.user.author
-        author = Author.objects.get(pk=view.kwargs["pk"])
-
         return bool(
-            current_author == author
+            current_author == obj
             or Subscription.objects.filter(
-                subscriber=current_author, target=author
+                subscriber=current_author, target=obj
             ).exists()
-            or not author.is_private
+            or not obj.is_private
         )
