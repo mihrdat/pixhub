@@ -14,16 +14,16 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
     jwt = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ["id", "email", "password", "jwt"]
+        write_only_fields = ["password"]
 
-    def validate(self, attrs):
-        user = User(**attrs)
-        password = attrs["password"]
+    def validate(self, data):
+        user = User(**data)
+        password = data["password"]
 
         try:
             validate_password(password, user)
@@ -33,7 +33,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 {"password": serializer_error["non_field_errors"]}
             )
 
-        return attrs
+        return data
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)

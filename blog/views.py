@@ -180,7 +180,6 @@ class ArticleViewSet(ModelViewSet):
     def get_queryset(self):
         current_author = self.get_current_author()
         subscriptions = Subscription.objects.get_subscriptions_for(current_author)
-
         return (
             super()
             .get_queryset()
