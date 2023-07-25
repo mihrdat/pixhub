@@ -6,10 +6,13 @@ User = get_user_model()
 
 class Message(models.Model):
     content = models.TextField()
-    sender = models.ForeignKey(
+    user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="sent_messages"
     )
-    receiver = models.ForeignKey(
+    recipient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="received_messages"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"From {self.user.email} to {self.recipient.email}: {self.content}"
