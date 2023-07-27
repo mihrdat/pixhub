@@ -9,6 +9,7 @@ urlpatterns = [
     path("auth/", include("users.urls")),
     path("auth/", include("config.urls.jwt")),
     path("blog/", include("blog.urls")),
+    path("chat/", include("chat.urls")),
 ]
 
 if settings.DEBUG:
