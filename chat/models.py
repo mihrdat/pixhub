@@ -4,6 +4,10 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class ChatPage(models.Model):
+    name = models.CharField(max_length=55, unique=True)
+
+
 class Message(models.Model):
     content = models.TextField()
     user = models.ForeignKey(
@@ -11,6 +15,9 @@ class Message(models.Model):
     )
     recipient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="received_messages"
+    )
+    chat_page = models.ForeignKey(
+        ChatPage, on_delete=models.SET_NULL, related_name="messages", null=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
