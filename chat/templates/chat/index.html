@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Chatty</title>
+    <title>Chat</title>
     <!-- Include Bulma CSS framework -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css">
 </head>
@@ -22,40 +22,32 @@
                     </section>
                 </div>
 
-                <div class="column is-4 is-offset-4">
+                <form class="column is-4 is-offset-4">
                     <div class="field">
                         <div class="control">
-                            <input class="input" type="number" placeholder="Contact ID" id="contact-id-input">
+                            <input class="input" type="number" placeholder="Contact ID" name="contact_id">
                         </div>
                     </div>
 
                     <div class="field">
                         <div class="control">
-                            <a class="button is-info" id="submit">Submit</a>
+                            <button type="submit" class="button is-info">Submit</a>
                         </div>
                     </div>
-                </div>
             </div>
+        </div>
         </div>
     </section>
 
     <script>
-        // Automatically set the focus to the room name input
-        document.querySelector('#contact-id-input').focus();
+        const form = document.querySelector("form")
 
-        // If you hit "enter" on the keyboard, trigger the click method
-        document.querySelector('#contact-id-input').onkeyup = function (e) {
-            if (e.keyCode === 13) {
-                document.querySelector('#submit').click();
-            }
-        };
+        form.addEventListener('submit', (e) => {
+            e.preventDefault()
 
-        // When you submit the form, redirect the user to the room page
-        document.querySelector('#submit').onclick = function (e) {
-            var contactID = document.querySelector('#contact-id-input').value;
-
+            const contactID = e.target.contact_id.value;
             window.location.replace('/chat/chat_page/?contact_id=' + contactID);
-        };
+        })
     </script>
 </body>
 
