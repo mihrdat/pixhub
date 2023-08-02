@@ -6,6 +6,15 @@
     <meta charset="utf-8" />
     <title>Chat</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.2/css/bulma.min.css">
+    <style>
+        .font-bold {
+            font-weight: 600;
+        }
+
+        .font-normal {
+            font-weight: 400;
+        }
+    </style>
 </head>
 
 <body>
@@ -32,30 +41,45 @@
     </section>
 
     <script>
-        let url = `ws://${window.location.host}/ws/chat_page/`
-        const chatSocket = new WebSocket(url)
-
-        chatSocket.onmessage = function (e) {
-            let data = JSON.parse(e.data)
-            console.log("Data: ", data)
-
-            if (data.type === "chat") {
-                let messages = document.getElementById("messages")
-                messages.insertAdjacentHTML("beforeend", `<p>${data.message}</p>`)
+        async function main() {
+            async function getProfile() {
+                const response = await fetch('http://127.0.0.1:8000/auth/users/me/')
+                return await response.json();
             }
+
+            const profile = await getProfile();
+
+            let url = `ws://${window.location.host}/ws/chat_page/`
+            const chatSocket = new WebSocket(url)
+
+            chatSocket.onmessage = function (e) {
+                let data = JSON.parse(e.data)
+                console.log("Data: ", data)
+
+                if (data.type === "chat") {
+                    let messages = document.getElementById("messages")
+                    messages.insertAdjacentHTML("beforeend", `<p class=${data.user_id === profile.id ? 'font-bold' : 'font-normal'}>${data.message}</p>`)
+                }
+            }
+
+            let form = document.querySelector("form")
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const contactId = urlParams.get('contact_id');
+
+            form.addEventListener("submit", (e) => {
+                e.preventDefault()
+                let message = e.target.message.value
+                chatSocket.send(JSON.stringify({
+                    "message": message,
+                    "user_id": profile.id,
+                    "contact_id": contactId
+                }))
+                form.reset()
+            })
         }
 
-        let form = document.querySelector("form")
-
-        form.addEventListener("submit", (e) => {
-            e.preventDefault()
-            let message = e.target.message.value
-            chatSocket.send(JSON.stringify({
-                "message": message
-            }))
-            form.reset()
-        })
-
+        main();
     </script>
 </body>
 
