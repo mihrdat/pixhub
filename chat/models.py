@@ -4,6 +4,12 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class Room(models.Model):
+    name = models.CharField(max_length=55)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="rooms")
+    contact = models.ForeignKey(User, on_delete=models.CASCADE)
+
+
 class ChatPage(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="chat_pages")
     contact = models.ForeignKey(User, on_delete=models.CASCADE)
