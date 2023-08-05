@@ -17,10 +17,6 @@ class ChatPageViewSet(
         return super().get_queryset().filter(user=self.request.user)
 
 
-def index(request):
-    return render(request, "chat/index.html")
-
-
 def chat_page(request):
     contact_id = request.GET.get("contact_id", "Anonymous")
 
