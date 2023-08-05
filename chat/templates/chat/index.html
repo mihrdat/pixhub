@@ -49,7 +49,7 @@
 
             const profile = await getProfile();
 
-            let url = `ws://${window.location.host}/ws/chat_page/`
+            let url = `ws://${window.location.host}/ws/index/`
             const chatSocket = new WebSocket(url)
 
             chatSocket.onmessage = function (e) {

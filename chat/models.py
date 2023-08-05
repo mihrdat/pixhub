@@ -10,15 +10,6 @@ class Room(models.Model):
     contact = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
-class ChatPage(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="chat_pages")
-    contact = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.contact.email
-
-
 class Message(models.Model):
     content = models.TextField()
     sender = models.ForeignKey(

@@ -2,5 +2,5 @@ from django.urls import path
 from . import consumers
 
 websocket_urlpatterns = [
-    path("ws/<str:chat_page>/", consumers.ChatPageConsumer.as_asgi()),
+    path("ws/<str:index>/", consumers.ChatPageConsumer.as_asgi()),
 ]
