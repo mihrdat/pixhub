@@ -65,15 +65,12 @@
             let form = document.querySelector("form")
 
             const urlParams = new URLSearchParams(window.location.search);
-            const contactId = urlParams.get('contact_id');
 
             form.addEventListener("submit", (e) => {
                 e.preventDefault()
                 let message = e.target.message.value
                 chatSocket.send(JSON.stringify({
                     "message": message,
-                    "user_id": profile.id,
-                    "contact_id": contactId
                 }))
                 form.reset()
             })
