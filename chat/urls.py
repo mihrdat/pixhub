@@ -3,5 +3,5 @@ from . import views
 
 # URLConf
 urlpatterns = [
-    path("index/", views.index),
+    path("", views.chat),
 ]
