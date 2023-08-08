@@ -41,42 +41,32 @@
     </section>
 
     <script>
-        async function main() {
-            async function getProfile() {
-                const response = await fetch('http://127.0.0.1:8000/auth/users/me/')
-                return await response.json();
+        let url = `ws://${window.location.host}/chat/`
+        const chatSocket = new WebSocket(url)
+
+        chatSocket.onmessage = function (e) {
+            let data = JSON.parse(e.data)
+            console.log("Data: ", data)
+
+            if (data.type === "chat") {
+                let messages = document.getElementById("messages")
+                messages.insertAdjacentHTML("beforeend", `<p>${data.message}</p>`)
             }
-
-            const profile = await getProfile();
-
-            let url = `ws://${window.location.host}/chat/`
-            const chatSocket = new WebSocket(url)
-
-            chatSocket.onmessage = function (e) {
-                let data = JSON.parse(e.data)
-                console.log("Data: ", data)
-
-                if (data.type === "chat") {
-                    let messages = document.getElementById("messages")
-                    messages.insertAdjacentHTML("beforeend", `<p class=${data.user_id === profile.id ? 'font-bold' : 'font-normal'}>${data.message}</p>`)
-                }
-            }
-
-            let form = document.querySelector("form")
-
-            const urlParams = new URLSearchParams(window.location.search);
-
-            form.addEventListener("submit", (e) => {
-                e.preventDefault()
-                let message = e.target.message.value
-                chatSocket.send(JSON.stringify({
-                    "message": message,
-                }))
-                form.reset()
-            })
         }
 
-        main();
+        let form = document.querySelector("form")
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        form.addEventListener("submit", (e) => {
+            e.preventDefault()
+            let message = e.target.message.value
+            chatSocket.send(JSON.stringify({
+                "message": message,
+            }))
+            form.reset()
+        })
+
     </script>
 </body>
 
