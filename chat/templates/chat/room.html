@@ -41,7 +41,10 @@
     </section>
 
     <script>
-        let url = `ws://${window.location.host}/chat/`
+        const urlParams = new URLSearchParams(window.location.search);
+        const contact_id = urlParams.get('contact_id');
+
+        let url = `ws://${window.location.host}/chat/?contact_id=${contact_id}`
         const chatSocket = new WebSocket(url)
 
         chatSocket.onmessage = function (e) {
@@ -55,8 +58,6 @@
         }
 
         let form = document.querySelector("form")
-
-        const urlParams = new URLSearchParams(window.location.search);
 
         form.addEventListener("submit", (e) => {
             e.preventDefault()
