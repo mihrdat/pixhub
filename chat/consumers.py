@@ -1,19 +1,15 @@
 import json
+
 from channels.generic.websocket import AsyncWebsocketConsumer
+from urllib.parse import parse_qsl
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_group_name = "Os7jR32"
+        self.room_group_name = await self.get_room_name()
+        print(self.room_group_name)
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-
         await self.accept()
-
-        await self.send(
-            text_data=json.dumps(
-                {"type": "connection_established", "message": "You are now connected!"}
-            )
-        )
 
     async def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
@@ -37,3 +33,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
         )
+
+    async def get_room_name(self):
+        user = self.scope["user"]
+        query_params = dict(parse_qsl(self.scope["query_string"].decode("utf-8")))
+        contact_id = query_params["contact_id"]
+        return "-".join(sorted([str(user.id), str(contact_id)]))
