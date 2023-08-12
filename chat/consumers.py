@@ -1,7 +1,9 @@
 import json
 
-from channels.generic.websocket import AsyncWebsocketConsumer
 from urllib.parse import parse_qsl
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from .models import Message
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -15,6 +17,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
 
+        user = self.scope["user"]
+        query_params = dict(parse_qsl(self.scope["query_string"].decode("utf-8")))
+        contact_id = query_params["contact_id"]
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -23,8 +29,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
             },
         )
 
+        # Save message in the database
+        await self.save_message(message, user.id, contact_id)
+
+    @database_sync_to_async
+    def save_message(self, content, sender_id, recipient_id):
+        return Message.objects.create(
+            content=content, sender_id=sender_id, recipient_id=recipient_id
+        )
+
     async def chat_message(self, event):
         message = event["message"]
+
         await self.send(
             text_data=json.dumps(
                 {
